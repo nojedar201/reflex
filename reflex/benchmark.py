@@ -26,3 +26,10 @@ class Benchmark:
         print(f'{self.name} took {self.duration:.3f} seconds')
         # do not suppress any exception
         return False
+
+    def __call__(self, func):
+        def wrapper(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+
+        return wrapper

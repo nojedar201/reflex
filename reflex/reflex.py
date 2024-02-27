@@ -142,88 +142,90 @@ def _run(
 ):
     """Run the app in the given directory."""
     from reflex.utils import build, exec, prerequisites, processes
+    from reflex.benchmark import Benchmark
 
-    # Set the log level.
-    console.set_log_level(loglevel)
+    with Benchmark("Pre run"):
+        # Set the log level.
+        console.set_log_level(loglevel)
 
-    # Set env mode in the environment
-    os.environ["REFLEX_ENV_MODE"] = env.value
+        # Set env mode in the environment
+        os.environ["REFLEX_ENV_MODE"] = env.value
 
-    # Show system info
-    exec.output_system_info()
+        # Show system info
+        exec.output_system_info()
 
-    # If no --frontend-only and no --backend-only, then turn on frontend and backend both
-    if not frontend and not backend:
-        frontend = True
-        backend = True
+        # If no --frontend-only and no --backend-only, then turn on frontend and backend both
+        if not frontend and not backend:
+            frontend = True
+            backend = True
 
-    if not frontend and backend:
-        _skip_compile()
+        if not frontend and backend:
+            _skip_compile()
 
-    # Check that the app is initialized.
-    prerequisites.check_initialized(frontend=frontend)
+        # Check that the app is initialized.
+        prerequisites.check_initialized(frontend=frontend)
 
-    # If something is running on the ports, ask the user if they want to kill or change it.
-    if frontend and processes.is_process_on_port(frontend_port):
-        frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
+        # If something is running on the ports, ask the user if they want to kill or change it.
+        if frontend and processes.is_process_on_port(frontend_port):
+            frontend_port = processes.change_or_terminate_port(frontend_port, "frontend")
 
-    if backend and processes.is_process_on_port(backend_port):
-        backend_port = processes.change_or_terminate_port(backend_port, "backend")
+        if backend and processes.is_process_on_port(backend_port):
+            backend_port = processes.change_or_terminate_port(backend_port, "backend")
 
-    # Apply the new ports to the config.
-    if frontend_port != str(config.frontend_port):
-        config._set_persistent(frontend_port=frontend_port)
-    if backend_port != str(config.backend_port):
-        config._set_persistent(backend_port=backend_port)
+        # Apply the new ports to the config.
+        if frontend_port != str(config.frontend_port):
+            config._set_persistent(frontend_port=frontend_port)
+        if backend_port != str(config.backend_port):
+            config._set_persistent(backend_port=backend_port)
 
-    # Reload the config to make sure the env vars are persistent.
-    get_config(reload=True)
+        # Reload the config to make sure the env vars are persistent.
+        get_config(reload=True)
 
-    console.rule("[bold]Starting Reflex App")
+        console.rule("[bold]Starting Reflex App")
 
-    prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
+        prerequisites.check_latest_package_version(constants.Reflex.MODULE_NAME)
 
-    if frontend:
-        prerequisites.update_next_config()
-        # Get the app module.
-        prerequisites.get_compiled_app()
+        if frontend:
+            prerequisites.update_next_config()
+            # Get the app module.
+            prerequisites.get_compiled_app()
 
-    # Warn if schema is not up to date.
-    prerequisites.check_schema_up_to_date()
+        # Warn if schema is not up to date.
+        prerequisites.check_schema_up_to_date()
 
-    # Get the frontend and backend commands, based on the environment.
-    setup_frontend = frontend_cmd = backend_cmd = None
-    if env == constants.Env.DEV:
-        setup_frontend, frontend_cmd, backend_cmd = (
-            build.setup_frontend,
-            exec.run_frontend,
-            exec.run_backend,
-        )
-    if env == constants.Env.PROD:
-        setup_frontend, frontend_cmd, backend_cmd = (
-            build.setup_frontend_prod,
-            exec.run_frontend_prod,
-            exec.run_backend_prod,
-        )
-    assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
+        # Get the frontend and backend commands, based on the environment.
+        setup_frontend = frontend_cmd = backend_cmd = None
+        if env == constants.Env.DEV:
+            setup_frontend, frontend_cmd, backend_cmd = (
+                build.setup_frontend,
+                exec.run_frontend,
+                exec.run_backend,
+            )
+        if env == constants.Env.PROD:
+            setup_frontend, frontend_cmd, backend_cmd = (
+                build.setup_frontend_prod,
+                exec.run_frontend_prod,
+                exec.run_backend_prod,
+            )
+        assert setup_frontend and frontend_cmd and backend_cmd, "Invalid env"
 
-    # Post a telemetry event.
-    telemetry.send(f"run-{env.value}")
+        # Post a telemetry event.
+        telemetry.send(f"run-{env.value}")
 
-    # Display custom message when there is a keyboard interrupt.
-    atexit.register(processes.atexit_handler)
+        # Display custom message when there is a keyboard interrupt.
+        atexit.register(processes.atexit_handler)
 
-    # Run the frontend and backend together.
-    commands = []
+        # Run the frontend and backend together.
+        commands = []
 
-    # Run the frontend on a separate thread.
-    if frontend:
-        setup_frontend(Path.cwd())
-        commands.append((frontend_cmd, Path.cwd(), frontend_port))
+        # Run the frontend on a separate thread.
+        if frontend:
+            setup_frontend(Path.cwd())
+            commands.append((frontend_cmd, Path.cwd(), frontend_port))
 
-    # In prod mode, run the backend on a separate thread.
-    if backend and env == constants.Env.PROD:
-        commands.append((backend_cmd, backend_host, backend_port))
+        # In prod mode, run the backend on a separate thread.
+        if backend and env == constants.Env.PROD:
+            commands.append((backend_cmd, backend_host, backend_port))
 
     # Start the frontend and backend.
     with processes.run_concurrently_context(*commands):

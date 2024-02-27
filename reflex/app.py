@@ -78,6 +78,7 @@ from reflex.utils.imports import ImportVar
 ComponentCallable = Callable[[], Component]
 Reducer = Callable[[Event], Coroutine[Any, Any, StateUpdate]]
 
+from reflex.benchmark import Benchmark
 
 def default_overlay_component() -> Component:
     """Default overlay_component attribute for App.
@@ -653,6 +654,7 @@ class App(Base):
         )
         return
 
+    @Benchmark("compile")
     def compile_(self):
         """Compile the app and output it to the pages folder.
 
