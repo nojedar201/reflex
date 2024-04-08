@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Optional
 
 from reflex.components.base.bare import Bare
@@ -15,8 +16,9 @@ from reflex.components.radix.themes.components.dialog import (
     DialogTitle,
 )
 from reflex.components.radix.themes.layout import Flex
+from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
-from reflex.constants import Dirs, Hooks, Imports
+from reflex.constants import Dirs, Endpoint, Hooks, Imports
 from reflex.utils import imports
 from reflex.vars import Var, VarData
 
@@ -73,12 +75,28 @@ def default_connection_error() -> list[str | Var | Component]:
     Returns:
         The default connection error message.
     """
-    return [
+    error_parts = [
         "Cannot connect to server: ",
         connection_error,
         ". Check if server is reachable at ",
         WebsocketTargetURL.create(),
     ]
+    GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
+        "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
+    )
+    if GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN is not None:
+        error_parts.append(
+            Text.create(
+                Link.create(
+                    "Click here to authenticate backend",
+                    href=Endpoint.AUTH_CODESPACE.get_url(),
+                    is_external=True,
+                ),
+                align="center",
+                font_size="2em",
+            ),
+        )
+    return error_parts
 
 
 class ConnectionBanner(Component):
