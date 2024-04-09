@@ -19,7 +19,7 @@ from reflex.components.radix.themes.layout import Flex
 from reflex.components.radix.themes.typography.link import Link
 from reflex.components.radix.themes.typography.text import Text
 from reflex.constants import Dirs, Endpoint, Hooks, Imports
-from reflex.utils import imports
+from reflex.utils import codespaces, imports
 from reflex.vars import Var, VarData
 
 connect_error_var_data: VarData = VarData(  # type: ignore
@@ -75,28 +75,13 @@ def default_connection_error() -> list[str | Var | Component]:
     Returns:
         The default connection error message.
     """
-    error_parts = [
+    return [
         "Cannot connect to server: ",
         connection_error,
         ". Check if server is reachable at ",
         WebsocketTargetURL.create(),
+        *codespaces.codespaces_auto_redirect(),
     ]
-    GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN = os.getenv(
-        "GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN"
-    )
-    if GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN is not None:
-        error_parts.append(
-            Text.create(
-                Link.create(
-                    "Click here to authenticate backend",
-                    href=Endpoint.AUTH_CODESPACE.get_url(),
-                    is_external=True,
-                ),
-                align="center",
-                font_size="2em",
-            ),
-        )
-    return error_parts
 
 
 class ConnectionBanner(Component):

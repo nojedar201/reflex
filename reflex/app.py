@@ -28,7 +28,7 @@ from typing import (
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.middleware import cors
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from rich.progress import MofNCompleteColumn, Progress, TimeElapsedColumn
 from socketio import ASGIApp, AsyncNamespace, AsyncServer
@@ -77,7 +77,7 @@ from reflex.state import (
     _substate_key,
     code_uses_state_contexts,
 )
-from reflex.utils import console, exceptions, format, prerequisites, types
+from reflex.utils import codespaces, console, exceptions, format, prerequisites, types
 from reflex.utils.exec import is_testing_env, should_skip_compile
 from reflex.utils.imports import ImportVar
 
@@ -269,7 +269,9 @@ class App(Base):
         """Add default api endpoints (ping)."""
         # To test the server.
         self.api.get(str(constants.Endpoint.PING))(ping)
-        self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(auth_codespace)
+
+        if codespaces.is_running_in_codespaces():
+            self.api.get(str(constants.Endpoint.AUTH_CODESPACE))(codespaces.auth_codespace)
 
     def add_optional_endpoints(self):
         """Add optional api endpoints (_upload)."""
@@ -1080,27 +1082,6 @@ async def ping() -> str:
         The response.
     """
     return "pong"
-
-
-async def auth_codespace() -> HTMLResponse:
-    """Provide a link to close the current tab after authenticating a codespace forward.
-    
-    Returns:
-        An HTML response with a close tab link.
-    """
-    return HTMLResponse("""
-    <html>
-        <head>
-            <title>Reflex Github Codespace Forward Successfully Authenticated</title>
-        </head>
-        <body>
-            <center>
-                <h2>Backend is authenticated</h2>
-                <a href='javascript:window.close()'>Close this tab</a>
-            </center>
-        </body>
-    </html>
-    """)
 
 
 def upload(app: App):
