@@ -744,7 +744,10 @@ def install_bun():
     if constants.IS_WINDOWS:
         processes.new_process(
             ["powershell", "-c", f"irm {constants.Bun.INSTALL_URL}.ps1|iex"],
-            env={"BUN_INSTALL": constants.Bun.ROOT_PATH},
+            env={
+                "BUN_INSTALL": constants.Bun.ROOT_PATH,
+                "Version": constants.Bun.VERSION,
+            },
             shell=True,
             run=True,
             show_logs=console.is_debug(),
