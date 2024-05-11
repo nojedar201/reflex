@@ -112,8 +112,10 @@ class DrawerSidebar(DrawerRoot):
                 IconButton.create(
                     "arrow-right-from-line",
                     background_color="transparent",
+                    color=color("accent", 12),
+                    cursor="pointer",
                 ),
-                position="absolute",
+                position="fixed",
                 top="15",
                 left="15",
             ),
