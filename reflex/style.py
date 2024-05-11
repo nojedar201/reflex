@@ -290,7 +290,7 @@ STACK_CHILDREN_FULL_WIDTH = {
     },
     "& :where(.rx-Stack) > :where( "
     "div:not(.rt-Box, .rx-Upload, .rx-Html),"
-    "input, select, textarea, table"
+    "input, select, textarea, table, label"
     ")": {
         "width": "100%",
         "flex_shrink": "1",
