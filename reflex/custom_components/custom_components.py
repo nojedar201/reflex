@@ -20,7 +20,6 @@ from reflex import constants
 from reflex.config import get_config
 from reflex.constants import CustomComponents
 from reflex.utils import console
-from reflex.utils.pyi_generator import PyiGenerator
 
 config = get_config()
 custom_components_cli = typer.Typer()
@@ -69,6 +68,28 @@ def _create_package_config(module_name: str, package_name: str):
                 module_name=module_name, package_name=package_name
             )
         )
+
+
+def _get_package_config(exit_on_fail: bool = True) -> dict:
+    """Get the package configuration from the pyproject.toml file.
+
+    Args:
+        exit_on_fail: Whether to exit if the pyproject.toml file is not found.
+
+    Returns:
+        The package configuration.
+
+    Raises:
+        Exit: If the pyproject.toml file is not found.
+    """
+    try:
+        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
+            return dict(tomlkit.load(f))
+    except (OSError, TOMLKitError) as ex:
+        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        if exit_on_fail:
+            raise typer.Exit(code=1) from ex
+        raise
 
 
 def _create_readme(module_name: str, package_name: str):
@@ -416,9 +437,9 @@ def _run_commands_in_subprocess(cmds: list[str]) -> bool:
 
 def _make_pyi_files():
     """Create pyi files for the custom component."""
-    from glob import glob
+    from reflex.utils.pyi_generator import PyiGenerator
 
-    package_name = glob("custom_components/*.egg-info")[0].replace(".egg-info", "")
+    package_name = _get_package_config()["project"]["name"]
 
     for dir, _, _ in os.walk(f"./{package_name}"):
         if "__pycache__" in dir:
@@ -514,22 +535,10 @@ def _validate_credentials(
 def _get_version_to_publish() -> str:
     """Get the version to publish from the pyproject.toml.
 
-    Raises:
-        Exit: If the version is not found in the pyproject.toml.
-
     Returns:
         The version to publish.
     """
-    # Get the version from the pyproject.toml.
-    try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            project_toml = tomlkit.parse(f.read())
-            return project_toml.get("project", {})["version"]
-    except (OSError, KeyError, TOMLKitError) as ex:
-        console.error(
-            f"Cannot find the version in {CustomComponents.PYPROJECT_TOML} due to {ex}"
-        )
-        raise typer.Exit(code=1) from ex
+    return _get_package_config()["project"]["version"]
 
 
 def _ensure_dist_dir(version_to_publish: str, build: bool):
@@ -547,7 +556,6 @@ def _ensure_dist_dir(version_to_publish: str, build: bool):
     if build:
         # Need to check if the files here are for the version to be published.
         if dist_dir.exists():
-
             # Check if the distribution files are for the version to be published.
             needs_rebuild = False
             for suffix in CustomComponents.DISTRIBUTION_FILE_SUFFIXES:
@@ -608,15 +616,17 @@ def publish(
         help="The API token to use for authentication on python package repository. If token is provided, no username/password should be provided at the same time",
     ),
     username: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_USERNAME"),
         "-u",
         "--username",
+        show_default="TWINE_USERNAME environment variable value if set",
         help="The username to use for authentication on python package repository. Username and password must both be provided.",
     ),
     password: Optional[str] = typer.Option(
-        None,
+        os.getenv("TWINE_PASSWORD"),
         "-p",
         "--password",
+        show_default="TWINE_PASSWORD environment variable value if set",
         help="The password to use for authentication on python package repository. Username and password must both be provided.",
     ),
     build: bool = typer.Option(
@@ -658,6 +668,9 @@ def publish(
 
     # Validate the credentials.
     username, password = _validate_credentials(username, password, token)
+
+    # Minimal Validation of the pyproject.toml.
+    _min_validate_project_info()
 
     # Get the version to publish from the pyproject.toml.
     version_to_publish = _get_version_to_publish()
@@ -727,30 +740,45 @@ def _process_entered_list(input: str | None) -> list | None:
     return [t.strip() for t in (input or "").split(",") if t if input] or None
 
 
+def _min_validate_project_info():
+    """Ensures minimal project information in the pyproject.toml file.
+
+    Raises:
+        Exit: If the pyproject.toml file is ill-formed.
+    """
+    pyproject_toml = _get_package_config()
+
+    project = pyproject_toml.get("project")
+    if project is None:
+        console.error(
+            f"The project section is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("name"):
+        console.error(
+            f"The project name is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+    if not project.get("version"):
+        console.error(
+            f"The project version is not found in {CustomComponents.PYPROJECT_TOML}"
+        )
+        raise typer.Exit(code=1)
+
+
 def _validate_project_info():
     """Validate the project information in the pyproject.toml file.
 
     Raises:
         Exit: If the pyproject.toml file is ill-formed.
     """
-    try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            pyproject_toml = tomlkit.parse(f.read())
-    except TOMLKitError as ex:
-        console.error(f"Unable to read from pyproject.toml due to {ex}")
-        raise typer.Exit(code=1) from ex
-
-    try:
-        project = pyproject_toml.get("project", {})
-        if not project:
-            console.error("The project section not found in pyproject.toml")
-            raise typer.Exit(code=1)
-        console.print(
-            f'Double check the information before publishing: {project["name"]} version {project["version"]}'
-        )
-    except KeyError as ke:
-        console.error(f"The pyproject.toml is possibly ill-formed due to {ke}")
-        raise typer.Exit(code=1) from ke
+    pyproject_toml = _get_package_config()
+    project = pyproject_toml["project"]
+    console.print(
+        f'Double check the information before publishing: {project["name"]} version {project["version"]}'
+    )
 
     console.print("Update or enter to keep the current information.")
     project["description"] = console.ask(
@@ -796,7 +824,7 @@ def _validate_project_info():
         with open(CustomComponents.PYPROJECT_TOML, "w") as f:
             tomlkit.dump(pyproject_toml, f)
     except (OSError, TOMLKitError) as ex:
-        console.error(f"Unable to read from pyproject.toml due to {ex}")
+        console.error(f"Unable to write to pyproject.toml due to {ex}")
         raise typer.Exit(code=1) from ex
 
 
@@ -816,10 +844,8 @@ def _collect_details_for_gallery():
     params = {}
     package_name = None
     try:
-        with open(CustomComponents.PYPROJECT_TOML, "rb") as f:
-            project_toml = tomlkit.parse(f.read())
-        package_name = project_toml.get("project", {})["name"]
-    except (OSError, TOMLKitError, KeyError) as ex:
+        package_name = _get_package_config(exit_on_fail=False)["project"]["name"]
+    except (TOMLKitError, KeyError) as ex:
         console.debug(
             f"Unable to read from pyproject.toml in current directory due to {ex}"
         )
@@ -935,3 +961,25 @@ def share_more_detail(
     console.set_log_level(loglevel)
 
     _collect_details_for_gallery()
+
+
+@custom_components_cli.command()
+def install(
+    loglevel: constants.LogLevel = typer.Option(
+        config.loglevel, help="The log level to use."
+    ),
+):
+    """Install package from this local custom component in editable mode.
+
+    Args:
+        loglevel: The log level to use.
+
+    Raises:
+        Exit: If unable to install the current directory in editable mode.
+    """
+    console.set_log_level(loglevel)
+
+    if _pip_install_on_demand(package_name=".", install_args=["-e"]):
+        console.info(f"Package installed successfully!")
+    else:
+        raise typer.Exit(code=1)

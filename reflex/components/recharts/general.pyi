@@ -219,9 +219,6 @@ class Legend(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -314,9 +311,6 @@ class GraphingTooltip(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -446,9 +440,6 @@ class Label(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -580,8 +571,11 @@ class LabelList(Recharts):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
+
+responsive_container = ResponsiveContainer.create
+legend = Legend.create
+graphing_tooltip = GraphingTooltip.create
+label = Label.create
+label_list = LabelList.create

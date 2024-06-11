@@ -80,13 +80,13 @@ poetry run pyright reflex tests
 find reflex tests -name "*.py" -not -path reflex/reflex.py | xargs poetry run darglint
 ```
 
-Finally, run `black` to format your code.
+Finally, run `ruff` to format your code.
 
 ``` bash
-poetry run black reflex tests
+poetry run ruff format .
 ```
 
-Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and Black will run automatically before each commit.
+Consider installing git pre-commit hooks so Ruff, Pyright, Darglint and `make_pyi` will run automatically before each commit.
 Note that pre-commit will only be installed when you use a Python version >= 3.8.
 
 ``` bash
@@ -94,6 +94,15 @@ pre-commit install
 ```
 
 That's it you can now submit your PR. Thanks for contributing to Reflex!
+
+
+## Editing Templates 
+
+To edit the templates in Reflex you can do so in two way.
+
+Change to the basic `blank` template can be done in the `reflex/.templates/apps/blank` directory.
+
+Others templates can be edited in their own repository. For example the `sidebar` template can be found in the [`reflex-sidebar`](https://github.com/reflex-dev/sidebar-template) repository.
 
 
 ## Other Notes

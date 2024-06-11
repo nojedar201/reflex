@@ -19,7 +19,7 @@ from reflex.utils.format import format_event_chain
 from reflex.vars import BaseVar, Var
 from .base import BaseHTML
 
-FORM_DATA = Var.create("form_data")
+FORM_DATA = Var.create("form_data", _var_is_string=False)
 HANDLE_SUBMIT_JS_JINJA2 = Environment().from_string(
     "\n    const handleSubmit_{{ handle_submit_unique_name }} = useCallback((ev) => {\n        const $form = ev.target\n        ev.preventDefault()\n        const {{ form_data }} = {...Object.fromEntries(new FormData($form).entries()), ...{{ field_ref_mapping }}}\n\n        {{ on_submit_event_chain }}\n\n        if ({{ reset_on_submit }}) {\n            $form.reset()\n        }\n    })\n    "
 )
@@ -189,9 +189,6 @@ class Button(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -324,9 +321,6 @@ class Datalist(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -411,9 +405,6 @@ class Fieldset(Element):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -590,6 +581,7 @@ class Form(BaseHTML):
             The form component.
         """
         ...
+    def add_hooks(self) -> list[str]: ...
 
 class Input(BaseHTML):
     def get_event_triggers(self) -> Dict[str, Any]: ...
@@ -671,7 +663,7 @@ class Input(BaseHTML):
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
         ] = None,
         value: Optional[
-            Union[Var[Union[str, int, bool]], Union[str, int, bool]]
+            Union[Var[Union[str, int, float]], Union[str, int, float]]
         ] = None,
         access_key: Optional[
             Union[Var[Union[str, int, bool]], Union[str, int, bool]]
@@ -838,9 +830,6 @@ class Input(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -979,9 +968,6 @@ class Label(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1114,9 +1100,6 @@ class Legend(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1267,9 +1250,6 @@ class Meter(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1410,9 +1390,6 @@ class Optgroup(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1561,9 +1538,6 @@ class Option(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1704,9 +1678,6 @@ class Output(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -1847,9 +1818,6 @@ class Progress(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2012,9 +1980,6 @@ class Select(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
 
@@ -2214,8 +2179,19 @@ class Textarea(BaseHTML):
 
         Returns:
             The component.
-
-        Raises:
-            TypeError: If an invalid child is passed.
         """
         ...
+
+button = Button.create
+fieldset = Fieldset.create
+form = Form.create
+input = Input.create
+label = Label.create
+legend = Legend.create
+meter = Meter.create
+optgroup = Optgroup.create
+option = Option.create
+output = Output.create
+progress = Progress.create
+select = Select.create
+textarea = Textarea.create

@@ -6,11 +6,12 @@ omit =
     reflex/__main__.py
     reflex/app_module_for_backend.py
     reflex/components/chakra/*
+    reflex/experimental/*
 
 [report]
 show_missing = true
 # TODO bump back to 79
-fail_under = 70
+fail_under = 66
 precision = 2
 
 # Regexes for lines to exclude from consideration

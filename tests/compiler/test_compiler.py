@@ -135,7 +135,7 @@ def test_compile_stylesheets(tmp_path, mocker):
         f"@import url('./tailwind.css'); \n"
         f"@import url('https://fonts.googleapis.com/css?family=Sofia&effect=neon|outline|emboss|shadow-multiple'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css'); \n"
-        f"@import url('@/styles.css'); \n"
+        f"@import url('../public/styles.css'); \n"
         f"@import url('https://cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap-theme.min.css'); \n",
     )
 
@@ -166,7 +166,7 @@ def test_compile_stylesheets_exclude_tailwind(tmp_path, mocker):
 
     assert compiler.compile_root_stylesheet(stylesheets) == (
         os.path.join(".web", "styles", "styles.css"),
-        "@import url('@/styles.css'); \n",
+        "@import url('../public/styles.css'); \n",
     )
 
 
@@ -208,7 +208,11 @@ def test_create_document_root():
         utils.NextScript.create(src="foo.js"),
         utils.NextScript.create(src="bar.js"),
     ]
-    root = utils.create_document_root(head_components=comps, html_lang="rx", html_custom_attrs={"project": "reflex"})  # type: ignore
+    root = utils.create_document_root(
+        head_components=comps,  # type: ignore
+        html_lang="rx",
+        html_custom_attrs={"project": "reflex"},
+    )
     # Two children in head.
     assert isinstance(root, utils.Html)
     assert len(root.children[0].children) == 2
